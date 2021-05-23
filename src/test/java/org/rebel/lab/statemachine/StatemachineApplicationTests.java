@@ -11,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.StateMachineFactory;
+import org.springframework.statemachine.guard.Guard;
 
 @SpringBootTest
 class StatemachineApplicationTests {
@@ -67,6 +68,18 @@ class StatemachineApplicationTests {
                 .isEqualTo(JiraStates.TESTING);
     }
 
+
+
+    @Test
+    public void testGuard() {
+        // Arrange & act
+        stateMachine.sendEvent(Events.START_FEATURE);
+        stateMachine.sendEvent(Events.FINISH_FEATURE);
+        stateMachine.sendEvent(Events.QA_TEAM_APPROVE); // not accepted!
+        // Asserts
+        Assertions.assertThat(stateMachine.getState().getId())
+                .isEqualTo(JiraStates.IN_PROGRESS);
+    }
 
 
 

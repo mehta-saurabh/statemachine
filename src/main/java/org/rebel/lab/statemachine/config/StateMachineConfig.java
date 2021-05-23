@@ -15,6 +15,7 @@ import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter
 import org.springframework.statemachine.config.builders.StateMachineConfigurationConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
+import org.springframework.statemachine.guard.Guard;
 import org.springframework.statemachine.listener.StateMachineListener;
 import org.springframework.statemachine.listener.StateMachineListenerAdapter;
 import org.springframework.statemachine.transition.Transition;
@@ -49,27 +50,40 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<JiraSt
             throws Exception {
         transitions
                 .withExternal().source(JiraStates.BACKLOG).target(JiraStates.IN_PROGRESS).event(Events.START_FEATURE)
+
                 .and()
                 .withExternal()
                 .source(JiraStates.IN_PROGRESS)
                 .target(JiraStates.TESTING)
                 .event(Events.FINISH_FEATURE)
+                .guard(checkDeployGuard())
                 .action(deployAction())//moved action
+
                 .and()
                 .withExternal()
                 .source(JiraStates.TESTING)
                 .target(JiraStates.IN_PROGRESS)
                 .event(Events.QA_TEAM_REJECT)
+
                 .and()
                 .withExternal()
                 .source(JiraStates.TESTING)
                 .target(JiraStates.DONE)
                 .event(Events.QA_TEAM_APPROVE)
+
                 .and()
                 .withExternal()
                 .source(JiraStates.BACKLOG)
                 .target(JiraStates.TESTING)
-                .event(Events.DEV_TEST);;
+                .guard(checkDeployGuard())
+                .event(Events.DEV_TEST)
+
+                .and()
+                .withInternal()
+                .source(JiraStates.IN_PROGRESS)
+                .event(Events.DEPLOY)
+                .action(deployAction());
+        ;
     }
 
     private StateMachineListener<JiraStates, Events> listener() {
@@ -90,7 +104,20 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<JiraSt
     private Action<JiraStates, Events> deployAction() {
         return context -> {
             log.warn("DEPLOYING: {}",context.getEvent());
+            context.getExtendedState()
+                    .getVariables()
+                    .put("deployed", true);
         };
     }
+
+    private Guard<JiraStates, Events> checkDeployGuard() {
+        return context -> {
+            Boolean flag = (Boolean) context.getExtendedState()
+                    .getVariables()
+                    .get("deployed");
+            return flag == null ? false : flag;
+        };
+    }
+
 
 }
