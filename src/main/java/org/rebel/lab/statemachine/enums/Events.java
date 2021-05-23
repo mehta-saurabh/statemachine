@@ -8,5 +8,6 @@ public enum Events {
     DEPLOY,
     QA_CHECKED_PAAS,
     QA_TEAM_REJECT,
-    QA_TEAM_APPROVE
+    QA_TEAM_APPROVE,
+    DEV_TEST
 }

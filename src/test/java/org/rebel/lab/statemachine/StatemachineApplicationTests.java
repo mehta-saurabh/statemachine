@@ -57,4 +57,18 @@ class StatemachineApplicationTests {
 
 
 
+    @Test
+    public void testRockStar() {
+        // Arrange
+        // Act
+        stateMachine.sendEvent(Events.DEV_TEST);
+        // Asserts
+        Assertions.assertThat(stateMachine.getState().getId())
+                .isEqualTo(JiraStates.TESTING);
+    }
+
+
+
+
+
 }

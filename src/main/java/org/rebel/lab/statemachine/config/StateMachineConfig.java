@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.spi.LoggerFactoryBinder;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
+import org.springframework.statemachine.StateContext;
+import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachine;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
@@ -38,17 +40,15 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<JiraSt
             throws Exception {
         states.withStates().initial(JiraStates.BACKLOG)
                 .state(JiraStates.IN_PROGRESS)
-                .state(JiraStates.TESTING)
+                .state(JiraStates.TESTING,deployAction())
                 .end(JiraStates.DONE);
     }
 
     @Override
     public void configure(StateMachineTransitionConfigurer<JiraStates, Events> transitions)
             throws Exception {
-        transitions.withExternal()
-                .source(JiraStates.BACKLOG)
-                .target(JiraStates.IN_PROGRESS)
-                .event(Events.START_FEATURE)
+        transitions
+                .withExternal().source(JiraStates.BACKLOG).target(JiraStates.IN_PROGRESS).event(Events.START_FEATURE)
                 .and()
                 .withExternal()
                 .source(JiraStates.IN_PROGRESS)
@@ -63,7 +63,12 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<JiraSt
                 .withExternal()
                 .source(JiraStates.TESTING)
                 .target(JiraStates.DONE)
-                .event(Events.QA_TEAM_APPROVE);
+                .event(Events.QA_TEAM_APPROVE)
+                .and()
+                .withExternal()
+                .source(JiraStates.BACKLOG)
+                .target(JiraStates.TESTING)
+                .event(Events.DEV_TEST);;
     }
 
     private StateMachineListener<JiraStates, Events> listener() {
@@ -78,6 +83,12 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<JiraSt
                 log.error("event not accepted: {}", event);
             }
 
+        };
+    }
+
+    private Action<JiraStates, Events> deployAction() {
+        return context -> {
+            log.warn("DEPLOYING: {}",context.getEvent());
         };
     }
 
