@@ -40,7 +40,7 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<JiraSt
             throws Exception {
         states.withStates().initial(JiraStates.BACKLOG)
                 .state(JiraStates.IN_PROGRESS)
-                .state(JiraStates.TESTING,deployAction())
+                .state(JiraStates.TESTING)
                 .end(JiraStates.DONE);
     }
 
@@ -54,6 +54,7 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<JiraSt
                 .source(JiraStates.IN_PROGRESS)
                 .target(JiraStates.TESTING)
                 .event(Events.FINISH_FEATURE)
+                .action(deployAction())//moved action
                 .and()
                 .withExternal()
                 .source(JiraStates.TESTING)
